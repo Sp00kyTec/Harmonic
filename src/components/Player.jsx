@@ -1,37 +1,35 @@
 // src/components/Player.jsx
-import { useRef, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import audioManager from '../utils/audioManager';
 
-function Player({ currentSong }) {
-  const audioRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+function Player() {
+  const [state, setState] = useState({
+    currentSong: null,
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0,
+  });
 
+  // Subscribe to audio manager
   useEffect(() => {
-    if (currentSong && audioRef.current) {
-      audioRef.current.load();
-      if (isPlaying) {
-        audioRef.current.play().catch(e => console.error("Autoplay failed:", e));
-      }
-    }
-  }, [currentSong, isPlaying]);
+    const unsubscribe = audioManager.subscribe((newState) => {
+      setState({ ...newState });
+    });
 
-  const onLoadedMetadata = () => {
-    setDuration(Math.floor(audioRef.current.duration));
-  };
+    return () => unsubscribe();
+  }, []);
 
-  const updateTime = () => {
-    setCurrentTime(Math.floor(audioRef.current.currentTime));
-  };
+  const { currentSong, isPlaying, currentTime, duration } = state;
 
   const togglePlayPause = () => {
-    const audio = audioRef.current;
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play().catch(e => alert("Playback failed: " + e.message));
+    if (currentSong) {
+      audioManager.togglePlayPause();
     }
-    setIsPlaying(!isPlaying);
+  };
+
+  const handleSeek = (e) => {
+    const time = e.target.value;
+    audioManager.seek(time);
   };
 
   const formatTime = (timeSec) => {
@@ -45,21 +43,12 @@ function Player({ currentSong }) {
       <div className="bg-gradient-to-br from-gray-800 to-black text-white p-6 rounded-xl text-center shadow-2xl">
         <p className="text-lg">No song selected</p>
         <p className="text-sm opacity-75">Choose one from your library</p>
-        <audio ref={audioRef} />
       </div>
     );
   }
 
   return (
     <div className="bg-gradient-to-br from-indigo-900 to-black text-white p-6 rounded-xl shadow-2xl">
-      <audio
-        ref={audioRef}
-        src={currentSong.file}
-        onLoadedMetadata={onLoadedMetadata}
-        onTimeUpdate={updateTime}
-        onEnded={() => setIsPlaying(false)}
-      />
-
       <img
         src={currentSong.cover || "/covers/placeholder.jpg"}
         alt={currentSong.title}
@@ -79,11 +68,7 @@ function Player({ currentSong }) {
           type="range"
           value={currentTime}
           max={duration || 1}
-          onChange={(e) => {
-            const seekTime = e.target.value;
-            audioRef.current.currentTime = seekTime;
-            setCurrentTime(seekTime);
-          }}
+          onChange={handleSeek}
           className="w-full h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer accent-green-500"
         />
       </div>

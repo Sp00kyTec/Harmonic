@@ -1,7 +1,13 @@
 // src/components/TrackList.jsx
 import songs from '../data/songs.json';
+import audioManager from '../utils/audioManager';
 
-function TrackList({ onPlay }) {
+function TrackList() {
+  const handlePlay = (song) => {
+    audioManager.load(song);
+    audioManager.play();
+  };
+
   return (
     <div className="bg-gray-50 rounded-xl p-4 mt-4 shadow">
       <h2 className="text-xl font-semibold mb-3 text-gray-800">Your Library</h2>
@@ -9,7 +15,7 @@ function TrackList({ onPlay }) {
         {songs.map((song) => (
           <li
             key={song.id}
-            onClick={() => onPlay(song)}
+            onClick={() => handlePlay(song)}
             className="flex items-center gap-3 p-3 hover:bg-gray-200 rounded-lg cursor-pointer transition"
           >
             <img
