@@ -1,29 +1,29 @@
 [
   {
     "id": 1,
-    "title": "Midnight Dreams",
-    "artist": "Luna Sky",
-    "album": "Stellar Echoes",
-    "duration": "3:42",
-    "file": "/music/midnight-dreams.mp3",
-    "cover": "/covers/midnight.jpg"
+    "title": "Lofi Chill",
+    "artist": "Urban Beats",
+    "album": "City Nights",
+    "duration": "3:21",
+    "file": "/music/lofi-chill.mp3",
+    "cover": "/covers/lofi.jpg"
   },
   {
     "id": 2,
-    "title": "Electric Pulse",
-    "artist": "Neon Waves",
-    "album": "Digital Horizon",
-    "duration": "4:15",
-    "file": "/music/electric-pulse.mp3",
-    "cover": "/covers/electric.jpg"
+    "title": "Electronic Pulse",
+    "artist": "Neon Synth",
+    "album": "Digital Waves",
+    "duration": "4:05",
+    "file": "/music/electronic-pulse.mp3",
+    "cover": "/covers/electronic.jpg"
   },
   {
     "id": 3,
-    "title": "Ocean Breeze",
-    "artist": "Calm Seas",
-    "album": "Tranquil Waters",
-    "duration": "5:03",
-    "file": "/music/ocean-breeze.mp3",
-    "cover": "/covers/ocean.jpg"
+    "title": "Calm Piano",
+    "artist": "Peaceful Mind",
+    "album": "Tranquil Moments",
+    "duration": "5:12",
+    "file": "/music/calm-piano.mp3",
+    "cover": "/covers/piano.jpg"
   }
 ]
