@@ -29,12 +29,15 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,mp3,jpg}'],
+        // Allow larger files to be cached (default is 2097152 bytes ≈ 2 MiB)
+        maximumFileSizeToCacheInBytes: 10_000_000, // ~10 MB per file
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,mp3}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
       },
       devOptions: {
-        enabled: true
+        enabled: true,
+        navigateFallback: 'index.html',
       }
     })
   ],
