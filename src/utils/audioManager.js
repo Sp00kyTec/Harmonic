@@ -10,7 +10,11 @@ class AudioManager {
     this.subscribers = [];
     this.loop = false;
     this.shuffle = false;
-    this._isPlaying = false;
+    this.volume = 0.7; // Default volume (0.0 to 1.0)
+    this.muted = false;
+
+    // Apply initial volume
+    this.audio.volume = this.volume;
   }
 
   subscribe(callback) {
@@ -28,6 +32,8 @@ class AudioManager {
       duration: this.audio.duration || 0,
       loop: this.loop,
       shuffle: this.shuffle,
+      volume: this.muted ? 0 : this.audio.volume,
+      muted: this.muted,
     };
     this.subscribers.forEach(callback => callback(state));
   }
@@ -57,13 +63,11 @@ class AudioManager {
 
   play() {
     this.audio.play().catch(e => console.error("Playback failed:", e));
-    this._isPlaying = true;
     this.notify();
   }
 
   pause() {
     this.audio.pause();
-    this._isPlaying = false;
     this.notify();
   }
 
@@ -126,6 +130,20 @@ class AudioManager {
 
   setVolume(volume) {
     this.audio.volume = Math.max(0, Math.min(1, volume));
+    this.volume = this.audio.volume;
+    this.muted = false;
+    this.notify();
+  }
+
+  toggleMute() {
+    if (this.muted) {
+      this.audio.volume = this.volume || 0.7;
+      this.muted = false;
+    } else {
+      this.muted = true;
+      this.audio.volume = 0;
+    }
+    this.notify();
   }
 
   toggleLoop() {
@@ -140,14 +158,8 @@ class AudioManager {
 
   initEvents() {
     this.audio.addEventListener('timeupdate', () => this.notify());
-    this.audio.addEventListener('play', () => {
-      this._isPlaying = true;
-      this.notify();
-    });
-    this.audio.addEventListener('pause', () => {
-      this._isPlaying = false;
-      this.notify();
-    });
+    this.audio.addEventListener('play', () => this.notify());
+    this.audio.addEventListener('pause', () => this.notify());
     this.audio.addEventListener('ended', () => {
       this.next();
     });

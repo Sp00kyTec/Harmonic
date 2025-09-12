@@ -10,6 +10,8 @@ function Player() {
     duration: 0,
     shuffle: false,
     loop: false,
+    volume: 0.7,
+    muted: false,
   });
 
   // Subscribe to audio manager for real-time updates
@@ -21,7 +23,16 @@ function Player() {
     return () => unsubscribe();
   }, []);
 
-  const { currentSong, isPlaying, currentTime, duration, shuffle, loop } = state;
+  const {
+    currentSong,
+    isPlaying,
+    currentTime,
+    duration,
+    shuffle,
+    loop,
+    volume,
+    muted,
+  } = state;
 
   const togglePlayPause = () => {
     if (currentSong) {
@@ -32,6 +43,15 @@ function Player() {
   const handleSeek = (e) => {
     const time = e.target.value;
     audioManager.seek(time);
+  };
+
+  const handleVolumeChange = (e) => {
+    const vol = parseFloat(e.target.value);
+    audioManager.setVolume(vol);
+  };
+
+  const toggleMute = () => {
+    audioManager.toggleMute();
   };
 
   const toggleShuffle = () => {
@@ -48,6 +68,13 @@ function Player() {
     return `${mins}:${secs}`;
   };
 
+  // Choose volume icon based on level
+  const volumeIcon = () => {
+    if (muted || volume === 0) return '🔇';
+    if (volume < 0.5) return '🔈';
+    return '🔊';
+  };
+
   if (!currentSong) {
     return (
       <div className="bg-gradient-to-br from-gray-800 to-black text-white p-6 rounded-xl text-center shadow-2xl">
@@ -61,7 +88,7 @@ function Player() {
     <div className="bg-gradient-to-br from-indigo-900 to-black text-white p-6 rounded-xl shadow-2xl">
       {/* Album Art */}
       <img
-        src={currentSong.cover || "/covers/placeholder.jpg"}
+        src={currentSong.cover || '/covers/placeholder.jpg'}
         alt={currentSong.title}
         className="w-48 h-48 mx-auto rounded-lg shadow-lg mb-4"
       />
@@ -83,6 +110,26 @@ function Player() {
           max={duration || 1}
           onChange={handleSeek}
           className="w-full h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer accent-green-500"
+        />
+      </div>
+
+      {/* Volume Control */}
+      <div className="flex items-center gap-2 mt-3 px-2">
+        <button
+          onClick={toggleMute}
+          className="text-lg hover:text-green-400 transition"
+          aria-label={muted ? 'Unmute' : 'Mute'}
+        >
+          {volumeIcon()}
+        </button>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={muted ? 0 : volume}
+          onChange={handleVolumeChange}
+          className="flex-1 h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer accent-green-500"
         />
       </div>
 
@@ -133,7 +180,7 @@ function Player() {
               ? 'bg-green-500 text-white'
               : 'text-white/70 hover:text-white'
           }`}
-          aria-label={loop ? 'Repeat One' : 'Repeat All'}
+          aria-label={loop ? 'Repeat On' : 'Repeat Off'}
         >
           🔁
         </button>
@@ -143,6 +190,7 @@ function Player() {
       <div className="flex justify-center gap-4 mt-2 text-xs opacity-70">
         {shuffle && <span>Shuffle</span>}
         {loop && <span>Repeat</span>}
+        {muted && <span>Muted</span>}
       </div>
     </div>
   );
