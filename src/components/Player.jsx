@@ -8,9 +8,11 @@ function Player() {
     isPlaying: false,
     currentTime: 0,
     duration: 0,
+    shuffle: false,
+    loop: false,
   });
 
-  // Subscribe to audio manager
+  // Subscribe to audio manager for real-time updates
   useEffect(() => {
     const unsubscribe = audioManager.subscribe((newState) => {
       setState({ ...newState });
@@ -19,7 +21,7 @@ function Player() {
     return () => unsubscribe();
   }, []);
 
-  const { currentSong, isPlaying, currentTime, duration } = state;
+  const { currentSong, isPlaying, currentTime, duration, shuffle, loop } = state;
 
   const togglePlayPause = () => {
     if (currentSong) {
@@ -30,6 +32,14 @@ function Player() {
   const handleSeek = (e) => {
     const time = e.target.value;
     audioManager.seek(time);
+  };
+
+  const toggleShuffle = () => {
+    audioManager.toggleShuffle();
+  };
+
+  const toggleLoop = () => {
+    audioManager.toggleLoop();
   };
 
   const formatTime = (timeSec) => {
@@ -49,16 +59,19 @@ function Player() {
 
   return (
     <div className="bg-gradient-to-br from-indigo-900 to-black text-white p-6 rounded-xl shadow-2xl">
+      {/* Album Art */}
       <img
         src={currentSong.cover || "/covers/placeholder.jpg"}
         alt={currentSong.title}
         className="w-48 h-48 mx-auto rounded-lg shadow-lg mb-4"
       />
 
+      {/* Track Info */}
       <h2 className="text-2xl font-bold">{currentSong.title}</h2>
       <p className="text-lg opacity-90">{currentSong.artist}</p>
       <p className="text-sm opacity-70 mb-4">{currentSong.album}</p>
 
+      {/* Progress Bar */}
       <div className="mt-4">
         <div className="flex justify-between text-xs opacity-80 mb-1">
           <span>{formatTime(currentTime)}</span>
@@ -73,10 +86,24 @@ function Player() {
         />
       </div>
 
+      {/* Playback Controls */}
       <div className="flex justify-center gap-6 mt-6">
         <button
-          onClick={() => console.log('Previous')}
-          className="w-12 h-12 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full flex items-center justify-center transition"
+          onClick={toggleShuffle}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition transform hover:scale-105 ${
+            shuffle
+              ? 'bg-green-500 text-white'
+              : 'text-white/70 hover:text-white'
+          }`}
+          aria-label={shuffle ? 'Shuffle On' : 'Shuffle Off'}
+        >
+          🎲
+        </button>
+
+        <button
+          onClick={() => audioManager.previous()}
+          className="w-12 h-12 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full flex items-center justify-center transition transform hover:scale-105"
+          aria-label="Previous"
         >
           ⏮
         </button>
@@ -86,16 +113,36 @@ function Player() {
           className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl transition transform hover:scale-105 ${
             isPlaying ? 'bg-red-500' : 'bg-white text-black'
           }`}
+          aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? '❚❚' : '▶'}
         </button>
 
         <button
-          onClick={() => console.log('Next')}
-          className="w-12 h-12 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full flex items-center justify-center transition"
+          onClick={() => audioManager.next()}
+          className="w-12 h-12 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full flex items-center justify-center transition transform hover:scale-105"
+          aria-label="Next"
         >
           ⏭
         </button>
+
+        <button
+          onClick={toggleLoop}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition transform hover:scale-105 ${
+            loop
+              ? 'bg-green-500 text-white'
+              : 'text-white/70 hover:text-white'
+          }`}
+          aria-label={loop ? 'Repeat One' : 'Repeat All'}
+        >
+          🔁
+        </button>
+      </div>
+
+      {/* Mode Labels */}
+      <div className="flex justify-center gap-4 mt-2 text-xs opacity-70">
+        {shuffle && <span>Shuffle</span>}
+        {loop && <span>Repeat</span>}
       </div>
     </div>
   );
