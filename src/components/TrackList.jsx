@@ -3,137 +3,98 @@ import { useEffect, useState } from 'react';
 import audioManager from '../utils/audioManager';
 
 function TrackList() {
-  const [state, setState] = useState({
-    currentSong: null,
-  });
-
-  // All songs from audioManager
+  const [state, setState] = useState({ currentSong: null });
   const allSongs = audioManager.songs;
-
-  // Local state for search query
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter songs based on search query
   const filteredSongs = allSongs.filter((song) => {
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return true;
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
     return (
-      song.title.toLowerCase().includes(query) ||
-      song.artist.toLowerCase().includes(query) ||
-      song.album.toLowerCase().includes(query)
+      song.title.toLowerCase().includes(q) ||
+      song.artist.toLowerCase().includes(q) ||
+      song.album.toLowerCase().includes(q)
     );
   });
 
-  // Subscribe to audio manager for updates
   useEffect(() => {
     const unsubscribe = audioManager.subscribe((newState) => {
       setState({ currentSong: newState.currentSong });
     });
-
     return () => unsubscribe();
   }, []);
 
   const handlePlay = (song) => {
-    // If same song is clicked, toggle play/pause
     if (audioManager.currentSong() === song) {
       audioManager.togglePlayPause();
     } else {
-      // Play new song
       const index = allSongs.findIndex(s => s.id === song.id);
       audioManager.playAtIndex(index);
     }
   };
 
   return (
-    <div className="bg-gray-50 rounded-xl p-4 mt-4 shadow">
-      {/* Search Input */}
+    <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-2xl p-5 shadow-xl">
+      {/* Search */}
       <div className="mb-4">
         <input
           type="text"
-          placeholder="🔍 Search songs, artists..."
+          placeholder="🔍 Search tracks..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white text-gray-800 placeholder-gray-500"
-          aria-label="Search songs"
+          className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
         />
         {searchQuery && (
-          <p className="text-sm text-gray-600 mt-2">
-            Found {filteredSongs.length} result(s)
+          <p className="text-xs text-center mt-2 opacity-70">
+            Found <strong>{filteredSongs.length}</strong> result(s)
           </p>
         )}
       </div>
 
-      {/* Song List */}
-      <ul className="space-y-1">
+      {/* Track List */}
+      <div className="max-h-96 overflow-y-auto space-y-2 pr-1">
         {filteredSongs.length === 0 ? (
-          <li className="text-center py-6 text-gray-500">
-            No songs match "{searchQuery}"
-          </li>
+          <p className="text-center py-8 text-gray-400 text-sm">No tracks found</p>
         ) : (
           filteredSongs.map((song) => {
             const isPlaying = state.currentSong?.id === song.id;
             const isPaused = isPlaying && !audioManager.isPlaying;
 
             return (
-              <li
+              <div
                 key={song.id}
                 onClick={() => handlePlay(song)}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition ${
-                  isPlaying
-                    ? 'bg-green-50 ring-2 ring-green-200'
-                    : 'hover:bg-gray-200'
+                className={`group p-3 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-3 hover:bg-white/10 ${
+                  isPlaying ? 'bg-gradient-to-r from-green-500/20 to-transparent border border-green-500/30' : ''
                 }`}
               >
-                {/* Album Art with Now Playing Indicator */}
-                <div className="relative">
+                {/* Cover */}
+                <div className="w-10 h-10 overflow-hidden rounded shadow-sm flex-shrink-0">
                   <img
-                    src={song.cover || "/covers/placeholder.jpg"}
+                    src={song.cover || "https://via.placeholder.com/40"}
                     alt={song.title}
-                    className="w-12 h-12 rounded shadow"
+                    className="w-full h-full object-cover"
+                    onError={(e) => (e.target.src = "https://via.placeholder.com/40?text=🎵")}
                   />
-                  {isPlaying && (
-                    <div className="absolute inset-0 rounded-full border-2 border-green-500 animate-ping"></div>
-                  )}
-                  {isPlaying && !isPaused && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-6 h-6 bg-black/50 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs">▶</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                {/* Song Info */}
-                <div className="flex-1">
-                  <p
-                    className={`font-medium truncate max-w-[180px] ${
-                      isPlaying ? 'text-green-700' : 'text-gray-900'
-                    }`}
-                  >
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className={`font-medium text-sm truncate ${isPlaying ? 'text-green-300' : 'text-white'}`}>
                     {song.title}
                   </p>
-                  <p
-                    className={`text-sm truncate max-w-[180px] ${
-                      isPlaying ? 'text-green-600' : 'text-gray-600'
-                    }`}
-                  >
+                  <p className={`text-xs truncate opacity-80 ${isPlaying ? 'text-green-200' : 'text-gray-300'}`}>
                     {song.artist}
                   </p>
                 </div>
 
                 {/* Duration */}
-                <span
-                  className={`text-sm w-10 ${
-                    isPlaying ? 'text-green-600' : 'text-gray-500'
-                  }`}
-                >
-                  {song.duration}
-                </span>
-              </li>
+                <span className="text-xs w-10 text-right opacity-70">{song.duration}</span>
+              </div>
             );
           })
         )}
-      </ul>
+      </div>
     </div>
   );
 }

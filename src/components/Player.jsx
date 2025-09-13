@@ -14,7 +14,6 @@ function Player() {
     muted: false,
   });
 
-  // Subscribe to audio manager for real-time updates
   useEffect(() => {
     const unsubscribe = audioManager.subscribe((newState) => {
       setState({ ...newState });
@@ -35,9 +34,7 @@ function Player() {
   } = state;
 
   const togglePlayPause = () => {
-    if (currentSong) {
-      audioManager.togglePlayPause();
-    }
+    if (currentSong) audioManager.togglePlayPause();
   };
 
   const handleSeek = (e) => {
@@ -68,7 +65,6 @@ function Player() {
     return `${mins}:${secs}`;
   };
 
-  // Choose volume icon based on level
   const volumeIcon = () => {
     if (muted || volume === 0) return '🔇';
     if (volume < 0.5) return '🔈';
@@ -77,30 +73,40 @@ function Player() {
 
   if (!currentSong) {
     return (
-      <div className="bg-gradient-to-br from-gray-800 to-black text-white p-6 rounded-xl text-center shadow-2xl">
-        <p className="text-lg">No song selected</p>
-        <p className="text-sm opacity-75">Choose one from your library</p>
+      <div className="bg-gradient-to-br from-gray-800 to-black text-white p-8 rounded-2xl shadow-2xl text-center border border-white/10">
+        <div className="w-20 h-20 mx-auto mb-4 bg-gray-700 rounded-full flex items-center justify-center">
+          🎵
+        </div>
+        <p className="text-lg font-medium">No track selected</p>
+        <p className="text-sm opacity-70">Choose one from your library</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gradient-to-br from-indigo-900 to-black text-white p-6 rounded-xl shadow-2xl">
+    <div className="bg-gradient-to-tl from-indigo-950 via-black to-slate-900 text-white p-6 rounded-2xl shadow-2xl border border-white/10 transform transition hover:scale-[1.01]">
       {/* Album Art */}
-      <img
-        src={currentSong.cover || '/covers/placeholder.jpg'}
-        alt={currentSong.title}
-        className="w-48 h-48 mx-auto rounded-lg shadow-lg mb-4"
-      />
+      <div className="flex justify-center mb-6">
+        <div className="w-64 h-64 md:w-72 md:h-72 overflow-hidden rounded-xl shadow-2xl ring-2 ring-green-500/30">
+          <img
+            src={currentSong.cover || "https://via.placeholder.com/300"}
+            alt={currentSong.title}
+            className="w-full h-full object-cover"
+            onError={(e) => (e.target.src = "https://via.placeholder.com/300?text=Album+Art")}
+          />
+        </div>
+      </div>
 
-      {/* Track Info */}
-      <h2 className="text-2xl font-bold">{currentSong.title}</h2>
-      <p className="text-lg opacity-90">{currentSong.artist}</p>
-      <p className="text-sm opacity-70 mb-4">{currentSong.album}</p>
+      {/* Song Info */}
+      <div className="text-center mb-6">
+        <h2 className="text-2xl md:text-3xl font-bold truncate">{currentSong.title}</h2>
+        <p className="text-lg opacity-90 truncate">{currentSong.artist}</p>
+        <p className="text-sm opacity-70">{currentSong.album}</p>
+      </div>
 
       {/* Progress Bar */}
-      <div className="mt-4">
-        <div className="flex justify-between text-xs opacity-80 mb-1">
+      <div className="mb-6">
+        <div className="flex justify-between text-xs opacity-80 mb-1 px-1">
           <span>{formatTime(currentTime)}</span>
           <span>{formatTime(duration)}</span>
         </div>
@@ -109,16 +115,15 @@ function Player() {
           value={currentTime}
           max={duration || 1}
           onChange={handleSeek}
-          className="w-full h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer accent-green-500"
+          className="w-full h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-green-500"
         />
       </div>
 
       {/* Volume Control */}
-      <div className="flex items-center gap-2 mt-3 px-2">
+      <div className="flex items-center justify-center gap-2 mb-6">
         <button
           onClick={toggleMute}
           className="text-lg hover:text-green-400 transition"
-          aria-label={muted ? 'Unmute' : 'Mute'}
         >
           {volumeIcon()}
         </button>
@@ -129,27 +134,23 @@ function Player() {
           step="0.01"
           value={muted ? 0 : volume}
           onChange={handleVolumeChange}
-          className="flex-1 h-1 bg-gray-400 rounded-lg appearance-none cursor-pointer accent-green-500"
+          className="w-24 h-2 bg-white/20 rounded-full appearance-none cursor-pointer accent-green-500"
         />
       </div>
 
-      {/* Playback Controls */}
-      <div className="flex justify-center gap-6 mt-6">
+      {/* Controls */}
+      <div className="flex items-center justify-center gap-4">
         <button
           onClick={toggleShuffle}
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition transform hover:scale-105 ${
-            shuffle
-              ? 'bg-green-500 text-white'
-              : 'text-white/70 hover:text-white'
-          }`}
-          aria-label={shuffle ? 'Shuffle On' : 'Shuffle Off'}
+          className={`p-2 rounded-full transition ${shuffle ? 'text-green-500' : 'text-white/70 hover:text-white'}`}
+          aria-label="Shuffle"
         >
           🎲
         </button>
 
         <button
           onClick={() => audioManager.previous()}
-          className="w-12 h-12 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full flex items-center justify-center transition transform hover:scale-105"
+          className="w-10 h-10 md:w-12 md:h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition active:scale-95"
           aria-label="Previous"
         >
           ⏮
@@ -157,8 +158,8 @@ function Player() {
 
         <button
           onClick={togglePlayPause}
-          className={`w-16 h-16 rounded-full flex items-center justify-center font-bold text-xl transition transform hover:scale-105 ${
-            isPlaying ? 'bg-red-500' : 'bg-white text-black'
+          className={`w-14 h-14 md:w-16 md:h-16 rounded-full font-bold text-lg flex items-center justify-center transition transform active:scale-95 ${
+            isPlaying ? 'bg-red-600' : 'bg-gradient-to-r from-green-500 to-emerald-500 text-black'
           }`}
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
@@ -167,7 +168,7 @@ function Player() {
 
         <button
           onClick={() => audioManager.next()}
-          className="w-12 h-12 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-full flex items-center justify-center transition transform hover:scale-105"
+          className="w-10 h-10 md:w-12 md:h-12 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition active:scale-95"
           aria-label="Next"
         >
           ⏭
@@ -175,21 +176,17 @@ function Player() {
 
         <button
           onClick={toggleLoop}
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition transform hover:scale-105 ${
-            loop
-              ? 'bg-green-500 text-white'
-              : 'text-white/70 hover:text-white'
-          }`}
-          aria-label={loop ? 'Repeat On' : 'Repeat Off'}
+          className={`p-2 rounded-full transition ${loop ? 'text-green-500' : 'text-white/70 hover:text-white'}`}
+          aria-label="Repeat"
         >
           🔁
         </button>
       </div>
 
-      {/* Mode Labels */}
-      <div className="flex justify-center gap-4 mt-2 text-xs opacity-70">
-        {shuffle && <span>Shuffle</span>}
-        {loop && <span>Repeat</span>}
+      {/* Mode Indicators */}
+      <div className="flex justify-center gap-3 mt-4 text-xs opacity-70">
+        {shuffle && <span>🔀 Shuffle</span>}
+        {loop && <span>🔁 Repeat</span>}
         {muted && <span>Muted</span>}
       </div>
     </div>

@@ -1,10 +1,12 @@
 // src/components/Header.jsx
 function Header() {
   return (
-    <header className="bg-gradient-to-r from-purple-900 to-blue-900 text-white p-6 shadow-lg">
-      <h1 className="text-3xl font-bold">🎧 Harmonic</h1>
-      <p className="opacity-90">Your personal music sanctuary.</p>
-    </header>
+    <div className="px-6 py-4">
+      <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+        🎧 Harmonic
+      </h1>
+      <p className="text-sm opacity-80 mt-1">Your music, elevated.</p>
+    </div>
   );
 }
 
