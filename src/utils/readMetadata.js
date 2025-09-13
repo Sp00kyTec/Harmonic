@@ -1,46 +1,38 @@
 // src/utils/readMetadata.js
-import jsmediatags from 'jsmediatags';
+import { parseBlob } from 'music-metadata-browser';
 
-export const readAudioMetadata = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const arrayBuffer = reader.result;
+export const readAudioMetadata = async (file) => {
+  try {
+    const metadata = await parseBlob(file);
 
-      jsmediatags.read(arrayBuffer, {
-        onSuccess: (tag) => {
-          const { title, artist, album } = tag.tags;
-          const picture = tag.tags.picture;
+    let coverUrl = null;
+    if (metadata.common.picture && metadata.common.picture.length > 0) {
+      const picture = metadata.common.picture[0];
+      const blob = new Blob([picture.data], { type: picture.format });
+      coverUrl = URL.createObjectURL(blob);
+    }
 
-          let coverUrl = null;
-          if (picture) {
-            const data = new Uint8Array(picture.data);
-            const blob = new Blob([data], { type: `image/${picture.format}` });
-            coverUrl = URL.createObjectURL(blob);
-          }
-
-          resolve({
-            title: title || file.name.replace('.mp3', ''),
-            artist: artist || 'Unknown Artist',
-            album: album || 'Unknown Album',
-            cover: coverUrl,
-            file: URL.createObjectURL(file),
-            duration: 'N/A' // Can be calculated later
-          });
-        },
-        onError: (error) => {
-          console.error("Error reading tags:", error);
-          resolve({
-            title: file.name.replace('.mp3', ''),
-            artist: 'Unknown Artist',
-            album: 'Unknown Album',
-            cover: '/covers/placeholder.jpg',
-            file: URL.createObjectURL(file),
-            duration: 'N/A'
-          });
-        }
-      });
+    return {
+      title: metadata.common.title || file.name.replace(/\.[^/.]+$/, ""),
+      artist: metadata.common.artist || 'Unknown Artist',
+      album: metadata.common.album || 'Unknown Album',
+      cover: coverUrl || '/covers/placeholder.jpg',
+      file: URL.createObjectURL(file),
+      duration: metadata.format.duration
+        ? `${Math.floor(metadata.format.duration / 60)}:${Math.floor(metadata.format.duration % 60)
+            .toString()
+            .padStart(2, '0')}`
+        : 'N/A',
     };
-    reader.readAsArrayBuffer(file);
-  });
+  } catch (error) {
+    console.error("Error reading metadata:", error);
+    return {
+      title: file.name.replace(/\.[^/.]+$/, ""),
+      artist: 'Unknown Artist',
+      album: 'Unknown Album',
+      cover: '/covers/placeholder.jpg',
+      file: URL.createObjectURL(file),
+      duration: 'N/A',
+    };
+  }
 };
