@@ -1,13 +1,54 @@
 // src/components/TrackList.jsx
 import { useEffect, useState } from 'react';
 import audioManager from '../utils/audioManager';
+import { readAudioMetadata } from '../utils/readMetadata';
 
 function TrackList() {
   const [state, setState] = useState({ currentSong: null });
-  const allSongs = audioManager.songs;
+  const [songs, setSongs] = useState(audioManager.songs);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredSongs = allSongs.filter((song) => {
+  useEffect(() => {
+    const unsubscribe = audioManager.subscribe((newState) => {
+      setState({ currentSong: newState.currentSong });
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handlePlay = (song) => {
+    const index = songs.findIndex(s => s.id === song.id);
+    if (index !== -1) {
+      audioManager.playAtIndex(index);
+    }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.mp3'));
+
+    const newSongs = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const metadata = await readAudioMetadata(file);
+      metadata.id = Date.now() + i;
+      newSongs.push(metadata);
+    }
+
+    setSongs(prev => [...prev, ...newSongs]);
+    // Optional: auto-play first imported song
+    if (newSongs.length > 0) {
+      const index = songs.length;
+      audioManager.songs = [...audioManager.songs, ...newSongs]; // Sync with manager
+      audioManager.playAtIndex(index);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const filteredSongs = songs.filter((song) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
@@ -17,24 +58,17 @@ function TrackList() {
     );
   });
 
-  useEffect(() => {
-    const unsubscribe = audioManager.subscribe((newState) => {
-      setState({ currentSong: newState.currentSong });
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handlePlay = (song) => {
-    if (audioManager.currentSong() === song) {
-      audioManager.togglePlayPause();
-    } else {
-      const index = allSongs.findIndex(s => s.id === song.id);
-      audioManager.playAtIndex(index);
-    }
-  };
-
   return (
-    <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-2xl p-5 shadow-xl">
+    <div
+      className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-2xl p-5 shadow-xl"
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+    >
+      {/* Drop Zone Indicator */}
+      <div className="text-xs text-center mb-3 opacity-70">
+        💾 Drop MP3 files here to import
+      </div>
+
       {/* Search */}
       <div className="mb-4">
         <input
@@ -42,7 +76,7 @@ function TrackList() {
           placeholder="🔍 Search tracks..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+          className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-green-500 transition"
         />
         {searchQuery && (
           <p className="text-xs text-center mt-2 opacity-70">
@@ -58,27 +92,24 @@ function TrackList() {
         ) : (
           filteredSongs.map((song) => {
             const isPlaying = state.currentSong?.id === song.id;
-            const isPaused = isPlaying && !audioManager.isPlaying;
 
             return (
               <div
                 key={song.id}
                 onClick={() => handlePlay(song)}
-                className={`group p-3 rounded-xl cursor-pointer transition-all duration-200 flex items-center gap-3 hover:bg-white/10 ${
-                  isPlaying ? 'bg-gradient-to-r from-green-500/20 to-transparent border border-green-500/30' : ''
+                className={`group p-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 hover:bg-white/10 ${
+                  isPlaying ? 'bg-green-500/20 border border-green-500/30' : ''
                 }`}
               >
-                {/* Cover */}
                 <div className="w-10 h-10 overflow-hidden rounded shadow-sm flex-shrink-0">
                   <img
-                    src={song.cover || "https://via.placeholder.com/40"}
+                    src={song.cover || "/covers/placeholder.jpg"}
                     alt={song.title}
                     className="w-full h-full object-cover"
-                    onError={(e) => (e.target.src = "https://via.placeholder.com/40?text=🎵")}
+                    onError={(e) => e.target.src = "https://via.placeholder.com/40?text=🎵"}
                   />
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className={`font-medium text-sm truncate ${isPlaying ? 'text-green-300' : 'text-white'}`}>
                     {song.title}
@@ -88,7 +119,6 @@ function TrackList() {
                   </p>
                 </div>
 
-                {/* Duration */}
                 <span className="text-xs w-10 text-right opacity-70">{song.duration}</span>
               </div>
             );

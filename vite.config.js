@@ -1,7 +1,6 @@
 // vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
@@ -9,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/icon-*.png'],
+      includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
         name: 'Harmonic',
         short_name: 'Harmonic',
@@ -29,21 +28,19 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Allow larger files to be cached (default is 2097152 bytes ≈ 2 MiB)
-        maximumFileSizeToCacheInBytes: 10_000_000, // ~10 MB per file
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,mp3}'],
+        // Allow up to 10MB per file (default is ~2MB)
+        maximumFileSizeToCacheInBytes: 10_000_000,
+        globPatterns: ['**/*.{html,css,js,svg,png,jpg,jpeg,mp3}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
       },
       devOptions: {
         enabled: true,
-        navigateFallback: 'index.html',
+        navigateFallback: 'index.html'
       }
     })
   ],
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
-    },
-  },
+  build: {
+    sourcemap: false, // Reduce size
+  }
 });

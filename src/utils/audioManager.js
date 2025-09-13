@@ -6,15 +6,14 @@ class AudioManager {
   constructor() {
     this.audio = new Audio();
     this.songs = songs;
-    this.currentSongIndex = -1; // No song loaded
+    this.currentSongIndex = -1;
     this.subscribers = [];
     this.loop = false;
     this.shuffle = false;
-    this.volume = 0.7; // Default volume (0.0 to 1.0)
-    this.muted = false;
 
-    // Apply initial volume
-    this.audio.volume = this.volume;
+    // Set default volume to 70%
+    this.audio.volume = 0.7;
+    this.muted = false;
   }
 
   subscribe(callback) {
@@ -49,21 +48,20 @@ class AudioManager {
     this.currentSongIndex = index;
     this.audio.src = this.songs[index].file;
     this.audio.load();
-    this.play();
-  }
 
-  loadCurrent() {
-    if (this.currentSongIndex === -1 && this.songs.length > 0) {
-      this.playAtIndex(0);
-    } else {
-      this.audio.src = this.currentSong().file;
-      this.audio.load();
-    }
+    // Ensure volume is restored
+    this.audio.volume = 0.7;
+    this.audio.muted = false;
+
+    this.play().catch(e => console.warn("Playback failed:", e));
   }
 
   play() {
-    this.audio.play().catch(e => console.error("Playback failed:", e));
-    this.notify();
+    return this.audio.play().catch(err => {
+      console.error("Audio playback failed:", err);
+      alert("Playback failed: Please interact with the page first (click anywhere).");
+      throw err;
+    });
   }
 
   pause() {
@@ -73,7 +71,7 @@ class AudioManager {
 
   togglePlayPause() {
     if (this.audio.paused) {
-      this.play();
+      this.play().catch(() => {});
     } else {
       this.pause();
     }
@@ -130,19 +128,13 @@ class AudioManager {
 
   setVolume(volume) {
     this.audio.volume = Math.max(0, Math.min(1, volume));
-    this.volume = this.audio.volume;
     this.muted = false;
     this.notify();
   }
 
   toggleMute() {
-    if (this.muted) {
-      this.audio.volume = this.volume || 0.7;
-      this.muted = false;
-    } else {
-      this.muted = true;
-      this.audio.volume = 0;
-    }
+    this.audio.muted = !this.audio.muted;
+    this.muted = this.audio.muted;
     this.notify();
   }
 
@@ -162,6 +154,10 @@ class AudioManager {
     this.audio.addEventListener('pause', () => this.notify());
     this.audio.addEventListener('ended', () => {
       this.next();
+    });
+    this.audio.addEventListener('error', (e) => {
+      console.error("Audio Error:", e);
+      alert("Failed to load audio file. Check console for details.");
     });
   }
 }
