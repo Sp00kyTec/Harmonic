@@ -5,13 +5,21 @@ import { readAudioMetadata } from '../utils/readMetadata';
 
 function TrackList() {
   const [state, setState] = useState({ currentSong: null });
-  const [songs, setSongs] = useState(audioManager.songs);
+  const [songs, setSongs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Load songs from audioManager (which loads from DB)
   useEffect(() => {
+    const updateSongs = () => {
+      setSongs([...audioManager.songs]);
+    };
+
     const unsubscribe = audioManager.subscribe((newState) => {
       setState({ currentSong: newState.currentSong });
+      updateSongs();
     });
+
+    updateSongs(); // Initial load
 
     return () => unsubscribe();
   }, []);
@@ -27,20 +35,15 @@ function TrackList() {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.mp3'));
 
-    const newSongs = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    for (let file of files) {
       const metadata = await readAudioMetadata(file);
-      metadata.id = Date.now() + i;
-      newSongs.push(metadata);
+      await audioManager.addSong(metadata);
     }
 
-    setSongs(prev => [...prev, ...newSongs]);
-    // Optional: auto-play first imported song
-    if (newSongs.length > 0) {
-      const index = songs.length;
-      audioManager.songs = [...audioManager.songs, ...newSongs]; // Sync with manager
-      audioManager.playAtIndex(index);
+    // Auto-play first imported song
+    if (files.length > 0 && audioManager.songs.length > 0) {
+      const lastIndex = audioManager.songs.length - 1;
+      audioManager.playAtIndex(lastIndex);
     }
   };
 
@@ -64,9 +67,9 @@ function TrackList() {
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
-      {/* Drop Zone Indicator */}
+      {/* Drop Zone */}
       <div className="text-xs text-center mb-3 opacity-70">
-        💾 Drop MP3 files here to import
+        💾 Drop MP3 files here to import — they'll be saved permanently!
       </div>
 
       {/* Search */}

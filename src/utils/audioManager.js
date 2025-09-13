@@ -1,19 +1,31 @@
 // src/utils/audioManager.js
-
-import songs from '../data/songs.json';
+import { getAllSongs, saveSong } from './db';
 
 class AudioManager {
   constructor() {
     this.audio = new Audio();
-    this.songs = songs;
+    this.songs = [];
     this.currentSongIndex = -1;
     this.subscribers = [];
     this.loop = false;
     this.shuffle = false;
 
-    // Set default volume to 70%
+    // Set default volume
     this.audio.volume = 0.7;
     this.muted = false;
+
+    this.initEvents();
+    this.loadSongsFromDB();
+  }
+
+  async loadSongsFromDB() {
+    try {
+      const savedSongs = await getAllSongs();
+      this.songs = savedSongs.length > 0 ? savedSongs : [];
+      this.notify();
+    } catch (error) {
+      console.error("Failed to load songs from DB:", error);
+    }
   }
 
   subscribe(callback) {
@@ -42,25 +54,27 @@ class AudioManager {
     return this.songs[this.currentSongIndex];
   }
 
-  playAtIndex(index) {
+  async playAtIndex(index) {
     if (index < 0 || index >= this.songs.length) return;
 
     this.currentSongIndex = index;
     this.audio.src = this.songs[index].file;
     this.audio.load();
 
-    // Ensure volume is restored
     this.audio.volume = 0.7;
     this.audio.muted = false;
 
-    this.play().catch(e => console.warn("Playback failed:", e));
+    try {
+      await this.audio.play();
+    } catch (err) {
+      console.warn("Playback failed:", err);
+      alert("Playback failed. Please interact with the page first.");
+    }
   }
 
   play() {
     return this.audio.play().catch(err => {
-      console.error("Audio playback failed:", err);
-      alert("Playback failed: Please interact with the page first (click anywhere).");
-      throw err;
+      console.warn("Playback failed:", err);
     });
   }
 
@@ -71,7 +85,7 @@ class AudioManager {
 
   togglePlayPause() {
     if (this.audio.paused) {
-      this.play().catch(() => {});
+      this.play();
     } else {
       this.pause();
     }
@@ -157,12 +171,30 @@ class AudioManager {
     });
     this.audio.addEventListener('error', (e) => {
       console.error("Audio Error:", e);
-      alert("Failed to load audio file. Check console for details.");
+      alert("Failed to load audio. Check file path or format.");
     });
+  }
+
+  async addSong(song) {
+    // Assign unique ID if not present
+    const newSong = {
+      ...song,
+      id: song.id || Date.now() + Math.random()
+    };
+
+    // Save to DB
+    await saveSong(newSong);
+
+    // Add to memory
+    this.songs.push(newSong);
+
+    // Notify subscribers
+    this.notify();
+
+    return newSong;
   }
 }
 
 const audioManager = new AudioManager();
-audioManager.initEvents();
 
 export default audioManager;
